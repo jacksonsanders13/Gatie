@@ -4,9 +4,8 @@ import { Button, Card, Notice, Screen, SectionTitle } from '../components/ui';
 import { useNow } from '../hooks/useNow';
 import type { ScreenProps } from '../navigation/types';
 import { blocking, findApp } from '../services/blocking';
-import { daysSinceGaveIn, formatMoney, moneyNotSpent, walkAwayCount } from '../state/selectors';
+import { daysSinceGaveIn, describeEntry, formatMoney, moneyNotSpent, walkAwayCount } from '../state/selectors';
 import { useStore } from '../state/store';
-import type { ReflectionEntry } from '../state/types';
 import { colors, radius, type } from '../theme';
 
 export default function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
@@ -83,13 +82,6 @@ export default function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>
       )}
     </Screen>
   );
-}
-
-function describeEntry(r: ReflectionEntry): string {
-  if (r.outcome === 'walked_away') return 'Walked away';
-  if (r.intent === 'buying') return 'Went in to buy';
-  const base = r.intent === 'browsing' ? 'Browsed' : 'Checked an order';
-  return r.boughtSomething ? `${base}, bought something` : base;
 }
 
 const styles = StyleSheet.create({

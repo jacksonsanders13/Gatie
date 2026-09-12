@@ -35,7 +35,24 @@ export function createInitialState(now = Date.now()): AppState {
   };
 }
 
-export const emptyDraft = (appId: string, item = ''): ReflectionDraft => ({
+/** Rebuilds saved state, filling in anything an older version didn't store. Shared by the app and the extension. */
+export function normalizeState(saved: Partial<AppState> | null | undefined, now = Date.now()): AppState {
+  const base = createInitialState(now);
+  if (!saved) return base;
+  return {
+    ...base,
+    ...saved,
+    settings: { ...base.settings, ...saved.settings },
+    // Entries saved before unlock intents existed were all buying reflections.
+    reflections: (saved.reflections ?? []).map((r) => ({
+      ...r,
+      intent: r.intent ?? 'buying',
+      boughtSomething: r.boughtSomething ?? null,
+    })),
+  };
+}
+
+export const emptyDraft =(appId: string, item = ''): ReflectionDraft => ({
   appId,
   item,
   reasonsFor: ['', ''],

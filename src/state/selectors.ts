@@ -24,7 +24,14 @@ export function daysSinceGaveIn(s: AppState, now = Date.now()): number {
   return Math.max(0, Math.floor((now - (lastGaveIn ?? s.trackingSince)) / DAY));
 }
 
-export const moneyNotSpent = (s: AppState): number =>
+export function describeEntry(r: ReflectionEntry): string {
+  if (r.outcome === 'walked_away') return 'Walked away';
+  if (r.intent === 'buying') return 'Went in to buy';
+  const base = r.intent === 'browsing' ? 'Browsed' : 'Checked an order';
+  return r.boughtSomething ? `${base}, bought something` : base;
+}
+
+export const moneyNotSpent =(s: AppState): number =>
   s.reflections.reduce((sum, r) => (r.outcome === 'walked_away' && r.cost ? sum + r.cost : sum), 0);
 
 export const walkAwayCount = (s: AppState): number =>

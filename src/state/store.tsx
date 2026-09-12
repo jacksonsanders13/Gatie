@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { createInitialState } from './actions';
+import { createInitialState, normalizeState } from './actions';
 import type { AppState } from './types';
 
 const STORAGE_KEY = 'gatie/state/v1';
@@ -23,15 +23,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
         if (!raw) return;
-        const saved = JSON.parse(raw) as Partial<AppState>;
-        const base = createInitialState();
-        setState({
-          ...base,
-          ...saved,
-          settings: { ...base.settings, ...saved.settings },
-          // Entries saved before unlock intents existed were all buying reflections.
-          reflections: (saved.reflections ?? []).map((r) => ({ ...r, intent: r.intent ?? 'buying', boughtSomething: r.boughtSomething ?? null })),
-        });
+        setState(normalizeState(JSON.parse(raw) as Partial<AppState>));
       })
       .catch((e) => console.warn('Failed to load saved state', e))
       .finally(() => setHydrated(true));

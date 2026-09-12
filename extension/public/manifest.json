@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Gatie",
+  "description": "Locks shopping sites until you've written down why you're going in.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Gatie",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "dashboard.html",
+  "permissions": ["storage", "declarativeNetRequest", "alarms"],
+  "host_permissions": [
+    "*://*.amazon.com/*",
+    "*://*.shein.com/*",
+    "*://*.temu.com/*",
+    "*://*.ebay.com/*",
+    "*://*.wish.com/*",
+    "*://*.aliexpress.com/*",
+    "*://*.walmart.com/*",
+    "*://*.target.com/*",
+    "*://*.etsy.com/*"
+  ],
+  "optional_host_permissions": ["*://*/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["gate.html", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
