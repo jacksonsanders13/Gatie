@@ -25,7 +25,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!raw) return;
         const saved = JSON.parse(raw) as Partial<AppState>;
         const base = createInitialState();
-        setState({ ...base, ...saved, settings: { ...base.settings, ...saved.settings } });
+        setState({
+          ...base,
+          ...saved,
+          settings: { ...base.settings, ...saved.settings },
+          // Entries saved before unlock intents existed were all buying reflections.
+          reflections: (saved.reflections ?? []).map((r) => ({ ...r, intent: r.intent ?? 'buying', boughtSomething: r.boughtSomething ?? null })),
+        });
       })
       .catch((e) => console.warn('Failed to load saved state', e))
       .finally(() => setHydrated(true));

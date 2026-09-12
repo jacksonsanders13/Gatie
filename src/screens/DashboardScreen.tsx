@@ -6,6 +6,7 @@ import type { ScreenProps } from '../navigation/types';
 import { blocking, findApp } from '../services/blocking';
 import { daysSinceGaveIn, formatMoney, moneyNotSpent, walkAwayCount } from '../state/selectors';
 import { useStore } from '../state/store';
+import type { ReflectionEntry } from '../state/types';
 import { colors, radius, type } from '../theme';
 
 export default function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
@@ -71,7 +72,7 @@ export default function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>
           {state.reflections.slice(0, 5).map((r) => (
             <Card key={r.id}>
               <Text style={type.label}>
-                {r.outcome === 'walked_away' ? 'Walked away' : 'Went in'} · {findApp(r.appId).name}
+                {describeEntry(r)} · {findApp(r.appId).name}
                 {r.cost ? ` · ${formatMoney(r.cost)}` : ''}
               </Text>
               {r.item ? <Text style={type.body}>{r.item}</Text> : null}
@@ -82,6 +83,13 @@ export default function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>
       )}
     </Screen>
   );
+}
+
+function describeEntry(r: ReflectionEntry): string {
+  if (r.outcome === 'walked_away') return 'Walked away';
+  if (r.intent === 'buying') return 'Went in to buy';
+  const base = r.intent === 'browsing' ? 'Browsed' : 'Checked an order';
+  return r.boughtSomething ? `${base}, bought something` : base;
 }
 
 const styles = StyleSheet.create({
