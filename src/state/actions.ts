@@ -1,5 +1,6 @@
 import type {
   AppState,
+  SelectionSnapshot,
   QuickIntent,
   ReflectionDraft,
   ReflectionEntry,
@@ -11,6 +12,8 @@ import type {
 export const DEFAULT_WAIT_MINUTES = 4;
 export const WAIT_OPTIONS = [2, 3, 4, 5, 7, 10];
 export const FREE_APP_LIMIT = 1;
+/** Stands for everything the user picked in Apple's Screen Time picker, which names no apps. */
+export const SELECTION_ID = 'selection';
 export const BROWSE_UNLOCKS_PER_DAY = 2;
 
 /** How long a blocked app stays open after each kind of unlock. */
@@ -23,6 +26,7 @@ export function createInitialState(now = Date.now()): AppState {
     hasOnboarded: false,
     trackingSince: now,
     blockedAppIds: [],
+    selection: null,
     settings: {
       waitMinutes: DEFAULT_WAIT_MINUTES,
       hourlyWage: null,
@@ -43,6 +47,7 @@ export function normalizeState(saved: Partial<AppState> | null | undefined, now 
     ...base,
     ...saved,
     settings: { ...base.settings, ...saved.settings },
+    selection: saved.selection ?? null,
     // Entries saved before unlock intents existed were all buying reflections.
     reflections: (saved.reflections ?? []).map((r) => ({
       ...r,
@@ -63,6 +68,13 @@ export const emptyDraft =(appId: string, item = ''): ReflectionDraft => ({
 export const completeOnboarding = (s: AppState): AppState => ({ ...s, hasOnboarded: true });
 
 export const setBlockedApps = (s: AppState, blockedAppIds: string[]): AppState => ({ ...s, blockedAppIds });
+
+/** iOS: one Screen Time selection stands in for the whole blocked list. */
+export const setSelection = (s: AppState, selection: SelectionSnapshot | null): AppState => ({
+  ...s,
+  selection,
+  blockedAppIds: selection ? [SELECTION_ID] : [],
+});
 
 export const updateSettings = (s: AppState, patch: Partial<Settings>): AppState => ({
   ...s,

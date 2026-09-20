@@ -6,9 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "gatie",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.jacksonsanders.gatie"
+      "bundleIdentifier": "com.jacksonsanders.gatie",
+      "appleTeamId": "MQ23RQRGS5",
+      "entitlements": {
+        "com.apple.developer.family-controls": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,6 +26,59 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "react-native-device-activity",
+        {
+          "appleTeamId": "MQ23RQRGS5",
+          "appGroup": "group.com.jacksonsanders.gatie"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "com.jacksonsanders.gatie.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.jacksonsanders.gatie"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.jacksonsanders.gatie.ShieldAction",
+                  "targetName": "ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.jacksonsanders.gatie"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.jacksonsanders.gatie.ActivityMonitorExtension",
+                  "targetName": "ActivityMonitorExtension",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.jacksonsanders.gatie"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "28b4f7af-dcad-42d8-b162-c672603212fb"
+      }
+    },
+    "owner": "jacksonsanders13"
   }
 }

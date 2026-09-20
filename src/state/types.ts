@@ -27,6 +27,14 @@ export type ReflectionEntry = ReflectionDraft & {
   boughtSomething: boolean | null;
 };
 
+/** What Apple's picker gave back. The token is opaque: it names no apps. */
+export type SelectionSnapshot = {
+  token: string;
+  appCount: number;
+  categoryCount: number;
+  webCount: number;
+};
+
 export type Settings = {
   waitMinutes: number;
   hourlyWage: number | null;
@@ -37,6 +45,8 @@ export type AppState = {
   hasOnboarded: boolean;
   trackingSince: number;
   blockedAppIds: string[];
+  /** iOS only: the Screen Time selection behind SELECTION_ID. Null in Expo Go and in the extension. */
+  selection: SelectionSnapshot | null;
   settings: Settings;
   reflections: ReflectionEntry[];
   pendingUnlock: PendingUnlock | null;

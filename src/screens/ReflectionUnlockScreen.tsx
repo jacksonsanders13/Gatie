@@ -35,7 +35,7 @@ export default function ReflectionUnlockScreen({ navigation, route }: ScreenProp
   const close = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'));
 
   const unlock = async (intent: UnlockIntent, apply: (s: AppState) => AppState) => {
-    await blocking.unblockTemporarily(appId, UNLOCK_WINDOWS[intent]);
+    await blocking.unblockTemporarily(state.selection, UNLOCK_WINDOWS[intent]);
     update(apply);
     Alert.alert(`${app.name} is open`, `It locks again in ${UNLOCK_WINDOWS[intent]} minutes.`);
     close();
