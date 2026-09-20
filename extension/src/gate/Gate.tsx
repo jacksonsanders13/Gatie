@@ -9,6 +9,7 @@ import {
 } from '../../../src/state/actions';
 import { browsesLeftToday, dueCheckIn, formatMoney, quickUnlockBlockedReason } from '../../../src/state/selectors';
 import type { AppState, ReflectionDraft, UnlockIntent } from '../../../src/state/types';
+import { closeCurrentTab } from '../nav';
 import { isOpen, syncRules } from '../rules';
 import { findSite, Site } from '../sites';
 import { Update, useAppState } from '../useAppState';
@@ -35,6 +36,7 @@ function readParams(): { siteId: string; to: string | null } {
 export default function Gate() {
   const { state, update } = useAppState();
   const [{ siteId, to }] = useState(readParams);
+  const [initialState, setInitialState] = useState<AppState | null>(null);
   const site = findSite(siteId);
   const destination = to ?? `https://${site.domain}`;
 
@@ -42,15 +44,21 @@ export default function Gate() {
     document.title = `${site.name} is locked · Gatie`;
   }, [site.name]);
 
-  if (!state) return null;
+  useEffect(() => {
+    if (state && !initialState) setInitialState(state);
+  }, [state, initialState]);
 
-  // Stale redirect (site was unblocked or is already open): just continue.
-  if (!state.blockedAppIds.includes(siteId) || isOpen(state, siteId)) {
-    location.replace(destination);
-    return null;
-  }
+  // Judged only on the state the gate loaded with: an unlock in progress navigates itself once rules are cleared.
+  const stale = initialState != null && (!initialState.blockedAppIds.includes(siteId) || isOpen(initialState, siteId));
 
-  return <GateFlow initialState={state} state={state} update={update} site={site} destination={destination} />;
+  useEffect(() => {
+    // Landed here from an outdated rule (site unblocked or already open): fix the rules, then continue.
+    if (stale) void syncRules(initialState!).then(() => location.replace(destination));
+  }, [stale]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!state || !initialState || stale) return null;
+
+  return <GateFlow initialState={initialState} state={state} update={update} site={site} destination={destination} />;
 }
 
 type Step = 'checkIn' | 'intent' | 'buying' | 'browsing' | 'walkedAway';
@@ -133,18 +141,13 @@ function GateFlow({ initialState, state, update, site, destination }: FlowProps)
 }
 
 function WalkedAway({ message }: { message: string }) {
-  const closeTab = async () => {
-    const tab = await chrome.tabs.getCurrent();
-    if (tab?.id != null) await chrome.tabs.remove(tab.id);
-  };
-
   return (
     <main className="page">
       <span className="glyph">🌿</span>
       <h1 className="display">Good call.</h1>
       <p className="lead">{message}</p>
       <div className="actions">
-        <button className="btn btn-primary" onClick={() => void closeTab()}>
+        <button className="btn btn-primary" onClick={() => void closeCurrentTab()}>
           Close this tab
         </button>
         <button className="btn btn-ghost" onClick={() => chrome.runtime.openOptionsPage()}>

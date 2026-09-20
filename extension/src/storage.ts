@@ -3,11 +3,7 @@ import type { AppState } from '../../src/state/types';
 
 export const STORAGE_KEY = 'gatie/state/v1';
 
-/** There's no web billing yet, so every Pro feature is on in the extension. */
-export const fromStorage = (raw: unknown): AppState => ({
-  ...normalizeState(raw as Partial<AppState> | undefined),
-  isPro: true,
-});
+export const fromStorage = (raw: unknown): AppState => normalizeState(raw as Partial<AppState> | undefined);
 
 export async function loadState(): Promise<AppState> {
   const { [STORAGE_KEY]: raw } = await chrome.storage.local.get(STORAGE_KEY);

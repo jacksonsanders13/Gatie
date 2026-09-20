@@ -5,14 +5,22 @@ import { findSite, isCustomSite, normalizeDomain, originsFor, SHOPPING_SITES } f
 type Props = {
   selected: string[];
   onChange: (ids: string[]) => void;
+  /** Max sites allowed (free plan); adding past it calls onLimit instead. */
+  limit?: number;
+  onLimit?: () => void;
 };
 
-export default function SitePicker({ selected, onChange }: Props) {
+export default function SitePicker({ selected, onChange, limit, onLimit }: Props) {
   const [custom, setCustom] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = (id: string) =>
-    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  const atLimit = limit != null && selected.length >= limit;
+
+  const toggle = (id: string) => {
+    if (selected.includes(id)) onChange(selected.filter((x) => x !== id));
+    else if (atLimit) onLimit?.();
+    else onChange([...selected, id]);
+  };
 
   const add = async (e: FormEvent) => {
     e.preventDefault();
@@ -22,12 +30,20 @@ export default function SitePicker({ selected, onChange }: Props) {
       return;
     }
     const id = SHOPPING_SITES.find((s) => s.domain === domain)?.id ?? domain;
+    if (selected.includes(id)) {
+      setCustom('');
+      return;
+    }
+    if (atLimit) {
+      onLimit?.();
+      return;
+    }
     // Built-in sites are covered by the manifest; anything else needs the user to grant access.
     if (isCustomSite(id) && !(await chrome.permissions.request({ origins: originsFor(domain) }))) {
       setError('Gatie needs permission for that site to be able to lock it.');
       return;
     }
-    if (!selected.includes(id)) onChange([...selected, id]);
+    onChange([...selected, id]);
     setCustom('');
     setError(null);
   };
@@ -61,6 +77,15 @@ export default function SitePicker({ selected, onChange }: Props) {
         </button>
       </form>
       {error && <p className="error">{error}</p>}
+      {limit != null && (
+        <p className="caption">
+          Free plan blocks {limit} site.{' '}
+          <a href="#" onClick={(e) => (e.preventDefault(), onLimit?.())}>
+            Gatie Pro
+          </a>{' '}
+          blocks as many as you need.
+        </p>
+      )}
     </div>
   );
 }

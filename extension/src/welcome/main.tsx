@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { completeOnboarding, setBlockedApps } from '../../../src/state/actions';
+import { completeOnboarding, FREE_APP_LIMIT, setBlockedApps } from '../../../src/state/actions';
+import { openPaywall } from '../nav';
 import SitePicker from '../SitePicker';
 import '../styles.css';
 import { useAppState } from '../useAppState';
@@ -68,7 +69,12 @@ function Welcome() {
       <p className="brand">Gatie</p>
       <h1 className="display">Which sites get you?</h1>
       <p className="lead">Gatie will lock them until you’ve written down why you’re going in.</p>
-      <SitePicker selected={sites} onChange={setSelected} />
+      <SitePicker
+        selected={sites}
+        onChange={setSelected}
+        limit={state.isPro ? undefined : FREE_APP_LIMIT}
+        onLimit={() => void openPaywall('sites')}
+      />
       <div className="actions">
         <button className="btn btn-primary" disabled={!sites.length} onClick={() => void finish()}>
           {sites.length ? `Block ${sites.length} site${sites.length > 1 ? 's' : ''}` : 'Pick at least one site'}
