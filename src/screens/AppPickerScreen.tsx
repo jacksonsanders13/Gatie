@@ -5,6 +5,7 @@ import { DeviceActivitySelectionSheetView } from 'react-native-device-activity';
 import { Button, Card, Monogram, Notice, Screen, StatusPill } from '../components/ui';
 import type { ScreenProps } from '../navigation/types';
 import { blocking, MOCK_SHOPPING_APPS } from '../services/blocking';
+import { ensureNotificationPermission } from '../services/notifications';
 import { completeOnboarding, FREE_APP_LIMIT, setBlockedApps, setSelection } from '../state/actions';
 import { useStore } from '../state/store';
 import type { AppState, SelectionSnapshot } from '../state/types';
@@ -49,7 +50,16 @@ export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppP
     setSaving(true);
     try {
       if (!(await ensureAuthorized())) return;
-      if (native) await blocking.applyShields(picked);
+      if (native) {
+        // The shield reaches the user through a notification, so this permission is load-bearing.
+        if (!(await ensureNotificationPermission())) {
+          Alert.alert(
+            'Turn on notifications',
+            'When a locked app is opened, Gatie sends a notification you tap to write your reason. Without it there is no way back in.',
+          );
+        }
+        await blocking.applyShields(picked);
+      }
       update((s: AppState) => {
         const next = native ? setSelection(s, picked) : setBlockedApps(s, selected);
         return fromOnboarding ? completeOnboarding(next) : next;

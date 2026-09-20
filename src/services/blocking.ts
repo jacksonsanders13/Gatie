@@ -1,5 +1,7 @@
 import {
   AuthorizationStatus,
+  clearAllManagedSettingsStoreSettings,
+  isShieldActive as isShieldActiveNative,
   blockSelection,
   configureActions,
   getAuthorizationStatus,
@@ -14,6 +16,7 @@ import {
 } from 'react-native-device-activity';
 
 import { SELECTION_ID } from '../state/actions';
+import { UNLOCK_NOTIFICATION_TAG } from './notifications';
 import type { SelectionSnapshot } from '../state/types';
 
 /**
@@ -98,6 +101,8 @@ export const blocking = {
       safely(() => resetBlocks(), undefined);
       return;
     }
+    // blockSelection adds to whatever is already shielded, so clear the previous set first.
+    safely(() => resetBlocks(), undefined);
     safely(() => {
       setFamilyActivitySelectionId({ id: NATIVE_SELECTION_ID, familyActivitySelection: selection.token });
       updateShield(
@@ -109,7 +114,23 @@ export const blocking = {
           iconSystemName: 'lock.fill',
         },
         {
-          primary: { behavior: 'close', actions: [{ type: 'openApp' }] },
+          primary: {
+            behavior: 'close',
+            actions: [
+              // Works on older iOS; Apple blocks extensions from launching apps on current versions.
+              { type: 'openApp' },
+              // The dependable path: a notification the user taps to land on the reflection screen.
+              {
+                type: 'sendNotification',
+                payload: {
+                  title: 'Gatie',
+                  body: 'Write your reason to unlock.',
+                  sound: 'default',
+                  userInfo: { tag: UNLOCK_NOTIFICATION_TAG },
+                },
+              },
+            ],
+          },
           secondary: { behavior: 'close', actions: [] },
         },
       );
@@ -141,5 +162,18 @@ export const blocking = {
     } catch (e) {
       console.warn('Gatie: could not schedule the re-block', e);
     }
+  },
+
+  /** True when Apple currently has a shield up for us. */
+  isShieldUp(): boolean {
+    return isNativeBlocking ? safely(() => isShieldActiveNative(), false) : false;
+  },
+
+  /** Escape hatch: wipe every shield and pending re-block we own. */
+  async clearEverything(): Promise<void> {
+    if (!isNativeBlocking) return;
+    safely(() => stopMonitoring([UNLOCK_ACTIVITY]), undefined);
+    safely(() => clearAllManagedSettingsStoreSettings(), undefined);
+    safely(() => resetBlocks(), undefined);
   },
 };

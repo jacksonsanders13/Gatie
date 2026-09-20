@@ -1,6 +1,7 @@
-import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
+import { createNavigationContainerRef, DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { Linking, Pressable, StyleSheet, Text } from 'react-native';
 
 import AppPickerScreen from '../screens/AppPickerScreen';
 import DashboardScreen from '../screens/DashboardScreen';
@@ -8,11 +9,16 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import ReflectionUnlockScreen from '../screens/ReflectionUnlockScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { onUnlockNotificationTap } from '../services/notifications';
 import { useStore } from '../state/store';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+/** The shield's "Open Gatie" button launches this URL; the library hardcodes the scheme. */
+const SHIELD_URL_PREFIX = 'device-activity:';
 
 const navTheme: Theme = {
   ...DefaultTheme,
@@ -28,10 +34,41 @@ const navTheme: Theme = {
 
 export default function RootNavigator() {
   const { state, hydrated } = useStore();
+  const pendingAppId = useRef<string | null>(null);
+  const blockedAppId = state.blockedAppIds[0] ?? null;
+
+  const openGate = useCallback((appId: string) => {
+    if (navigationRef.isReady()) navigationRef.navigate('ReflectionUnlock', { appId });
+    else pendingAppId.current = appId;
+  }, []);
+
+  // Opening a shielded app sends the user here; go straight to the gate rather than the dashboard.
+  useEffect(() => {
+    if (!blockedAppId) return;
+    const handle = (url: string | null) => {
+      if (url?.startsWith(SHIELD_URL_PREFIX)) openGate(blockedAppId);
+    };
+    Linking.getInitialURL().then(handle).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handle(url));
+    // Apple blocks the shield from launching us directly, so its notification is the real entry point.
+    const unsubscribeNotifications = onUnlockNotificationTap(() => openGate(blockedAppId));
+    return () => {
+      sub.remove();
+      unsubscribeNotifications();
+    };
+  }, [blockedAppId, openGate]);
+
+  const onReady = () => {
+    if (pendingAppId.current) {
+      navigationRef.navigate('ReflectionUnlock', { appId: pendingAppId.current });
+      pendingAppId.current = null;
+    }
+  };
+
   if (!hydrated) return null;
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} onReady={onReady}>
       <Stack.Navigator
         initialRouteName={state.hasOnboarded ? 'Dashboard' : 'Onboarding'}
         screenOptions={{

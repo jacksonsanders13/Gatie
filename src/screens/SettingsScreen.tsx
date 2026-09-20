@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'rea
 
 import { Button, Card, Screen, SectionHeader } from '../components/ui';
 import type { ScreenProps } from '../navigation/types';
+import { blocking } from '../services/blocking';
 import { isMockPurchases } from '../services/purchases';
 import { DEFAULT_WAIT_MINUTES, setPro, updateSettings, WAIT_OPTIONS } from '../state/actions';
 import { parseMoney } from '../state/selectors';
@@ -110,6 +111,17 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
               onPress={() => update((s) => setPro(s, !isPro))}
             />
           )}
+          <Text style={type.caption}>
+            Screen Time active: {String(blocking.isNative)} · shield up: {String(blocking.isShieldUp())}
+          </Text>
+          <Button
+            label="Clear all blocks"
+            variant="secondary"
+            onPress={() => {
+              void blocking.clearEverything();
+              Alert.alert('Blocks cleared', 'Every shield Gatie owns has been removed.');
+            }}
+          />
           <Button label="Reset all data" variant="ghost" onPress={confirmReset} />
         </>
       )}
