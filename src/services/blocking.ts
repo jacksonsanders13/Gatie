@@ -44,26 +44,25 @@ export const isNativeBlocking = safely(() => isAvailable(), false);
 export type BlockableApp = {
   id: string;
   name: string;
-  glyph: string;
 };
 
 /** Stand-ins for Apple's picker so the flow can be built and demoed in Expo Go. */
 export const MOCK_SHOPPING_APPS: BlockableApp[] = [
-  { id: 'amazon', name: 'Amazon', glyph: '📦' },
-  { id: 'shein', name: 'Shein', glyph: '👗' },
-  { id: 'temu', name: 'Temu', glyph: '🛍️' },
-  { id: 'ebay', name: 'eBay', glyph: '🏷️' },
-  { id: 'wish', name: 'Wish', glyph: '⭐' },
-  { id: 'aliexpress', name: 'AliExpress', glyph: '🚚' },
-  { id: 'walmart', name: 'Walmart', glyph: '🛒' },
-  { id: 'target', name: 'Target', glyph: '🎯' },
-  { id: 'etsy', name: 'Etsy', glyph: '🧶' },
+  { id: 'amazon', name: 'Amazon' },
+  { id: 'shein', name: 'Shein' },
+  { id: 'temu', name: 'Temu' },
+  { id: 'ebay', name: 'eBay' },
+  { id: 'wish', name: 'Wish' },
+  { id: 'aliexpress', name: 'AliExpress' },
+  { id: 'walmart', name: 'Walmart' },
+  { id: 'target', name: 'Target' },
+  { id: 'etsy', name: 'Etsy' },
 ];
 
 export const findApp = (id: string): BlockableApp =>
   id === SELECTION_ID
-    ? { id, name: 'Your blocked apps', glyph: '🔒' }
-    : (MOCK_SHOPPING_APPS.find((a) => a.id === id) ?? { id, name: 'This app', glyph: '🔒' });
+    ? { id, name: 'Your blocked apps' }
+    : (MOCK_SHOPPING_APPS.find((a) => a.id === id) ?? { id, name: 'This app' });
 
 /** Apple requires a schedule of at least 15 minutes, so it runs to end of day and the usage threshold ends the window. */
 function todayWindow() {

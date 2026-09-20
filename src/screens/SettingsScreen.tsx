@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
-import { Button, Card, Screen, SectionTitle } from '../components/ui';
+import { Button, Card, Screen, SectionHeader } from '../components/ui';
 import type { ScreenProps } from '../navigation/types';
 import { isMockPurchases } from '../services/purchases';
 import { DEFAULT_WAIT_MINUTES, setPro, updateSettings, WAIT_OPTIONS } from '../state/actions';
 import { parseMoney } from '../state/selectors';
 import { useStore } from '../state/store';
-import { colors, radius, type } from '../theme';
+import { colors, radius, space, type } from '../theme';
 
 export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const { state, update, reset } = useStore();
@@ -39,7 +39,7 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
 
   return (
     <Screen>
-      <SectionTitle>Wait after reflecting</SectionTitle>
+      <SectionHeader>Wait after reflecting</SectionHeader>
       <Card>
         <View style={styles.chips}>
           {WAIT_OPTIONS.map((m) => {
@@ -52,7 +52,7 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
                 onPress={() => pickWait(m)}
                 style={[styles.chip, on && styles.chipOn]}
               >
-                <Text style={[type.label, on && styles.chipLabelOn]}>{m} min</Text>
+                <Text style={[styles.chipLabel, on && styles.chipLabelOn]}>{m} min</Text>
               </Pressable>
             );
           })}
@@ -60,13 +60,13 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
         <Text style={type.caption}>
           {isPro
             ? 'The reflection does the work. The wait just slows you down a little.'
-            : `Free plan uses a ${DEFAULT_WAIT_MINUTES}-minute wait. Pro lets you choose.`}
+            : `Free uses a ${DEFAULT_WAIT_MINUTES}-minute wait. Pro lets you choose.`}
         </Text>
       </Card>
 
-      <SectionTitle>Hours of work</SectionTitle>
+      <SectionHeader>Hours of work</SectionHeader>
       <Card>
-        <Text style={type.label}>Your hourly pay (after tax)</Text>
+        <Text style={type.label}>Your hourly pay, after tax</Text>
         <TextInput
           style={styles.input}
           value={wageText}
@@ -79,9 +79,9 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
         <Text style={type.caption}>Used only to show prices as hours of work. Stays on this phone.</Text>
       </Card>
 
-      <SectionTitle>General</SectionTitle>
+      <SectionHeader>General</SectionHeader>
       <Card style={styles.row}>
-        <Text style={[type.label, styles.flex]}>Notifications</Text>
+        <Text style={[type.label, styles.rowLabel]}>Notifications</Text>
         <Switch
           value={settings.notificationsEnabled}
           onValueChange={(v) => update((s) => updateSettings(s, { notificationsEnabled: v }))}
@@ -90,7 +90,7 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
       </Card>
       <Button label="Edit blocked apps" variant="secondary" onPress={() => navigation.navigate('AppPicker')} />
 
-      <SectionTitle>Subscription</SectionTitle>
+      <SectionHeader>Subscription</SectionHeader>
       {isPro ? (
         <Card>
           <Text style={type.label}>Gatie Pro is active</Text>
@@ -102,7 +102,7 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
 
       {__DEV__ && (
         <>
-          <SectionTitle>Developer</SectionTitle>
+          <SectionHeader>Developer</SectionHeader>
           {isMockPurchases && (
             <Button
               label={isPro ? 'Turn off mock Pro' : 'Turn on mock Pro'}
@@ -118,26 +118,27 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  rowLabel: { flex: 1 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.xs,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
   },
   chipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipLabel: { fontSize: 14, fontWeight: '600', color: colors.inkSoft },
   chipLabelOn: { color: colors.onPrimary },
   input: {
     backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.lineStrong,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
     fontSize: 16,
     color: colors.ink,
   },

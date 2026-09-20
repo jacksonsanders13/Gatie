@@ -1,6 +1,6 @@
 import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Pressable, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import AppPickerScreen from '../screens/AppPickerScreen';
 import DashboardScreen from '../screens/DashboardScreen';
@@ -34,10 +34,15 @@ export default function RootNavigator() {
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         initialRouteName={state.hasOnboarded ? 'Dashboard' : 'Onboarding'}
-        screenOptions={{ headerShadowVisible: false, headerTintColor: colors.primary, headerTitleStyle: { color: colors.ink } }}
+        screenOptions={{
+          headerShadowVisible: false,
+          headerTintColor: colors.primary,
+          headerTitleStyle: { color: colors.ink, fontSize: 17, fontWeight: '600' },
+          contentStyle: { backgroundColor: colors.bg },
+        }}
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="AppPicker" component={AppPickerScreen} options={{ title: 'Apps to block' }} />
+        <Stack.Screen name="AppPicker" component={AppPickerScreen} options={{ title: '' }} />
         <Stack.Screen
           name="Dashboard"
           component={DashboardScreen}
@@ -45,8 +50,8 @@ export default function RootNavigator() {
             title: 'Gatie',
             headerBackVisible: false,
             headerRight: () => (
-              <Pressable accessibilityRole="button" hitSlop={10} onPress={() => navigation.navigate('Settings')}>
-                <Text style={{ color: colors.primary, fontSize: 17 }}>Settings</Text>
+              <Pressable accessibilityRole="button" hitSlop={12} onPress={() => navigation.navigate('Settings')}>
+                <Text style={styles.headerAction}>Settings</Text>
               </Pressable>
             ),
           })}
@@ -54,11 +59,15 @@ export default function RootNavigator() {
         <Stack.Screen
           name="ReflectionUnlock"
           component={ReflectionUnlockScreen}
-          options={{ title: 'Before you go in', presentation: 'modal' }}
+          options={{ title: '', presentation: 'modal' }}
         />
         <Stack.Screen name="Paywall" component={PaywallScreen} options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  headerAction: { color: colors.primary, fontSize: 16, fontWeight: '500' },
+});

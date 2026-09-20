@@ -6,13 +6,19 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "gatie",
+    "scheme": [
+      "gatie",
+      "device-activity"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.jacksonsanders.gatie",
       "appleTeamId": "MQ23RQRGS5",
       "entitlements": {
         "com.apple.developer.family-controls": true
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

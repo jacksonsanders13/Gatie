@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Notice, Screen } from '../components/ui';
+import { Button, Notice, Screen, StatusPill } from '../components/ui';
 import type { PaywallReason, ScreenProps } from '../navigation/types';
 import { getPlans, isMockPurchases, Plan, purchase, restore } from '../services/purchases';
 import { setPro } from '../state/actions';
 import { useStore } from '../state/store';
-import { colors, radius, type } from '../theme';
+import { colors, radius, space, type } from '../theme';
 
 const HEADLINES: Record<PaywallReason | 'default', string> = {
   apps: 'Block every app that gets you.',
@@ -88,19 +88,21 @@ export default function PaywallScreen({ navigation, route }: ScreenProps<'Paywal
               : ' '}
           </Text>
           <View style={styles.links}>
-            <Button label="Restore purchases" variant="ghost" onPress={onRestore} loading={busy === 'restore'} />
+            <Button label="Restore purchase" variant="ghost" onPress={onRestore} loading={busy === 'restore'} />
             <Button label="Not now" variant="ghost" onPress={() => navigation.goBack()} />
           </View>
         </>
       }
     >
-      <Text style={styles.eyebrow}>Gatie Pro</Text>
+      <Text style={type.overline}>Gatie Pro</Text>
       <Text style={type.display}>{HEADLINES[route.params?.reason ?? 'default']}</Text>
+
       <View style={styles.benefits}>
         {BENEFITS.map((b) => (
-          <Text key={b} style={type.body}>
-            ✓  {b}
-          </Text>
+          <View key={b} style={styles.benefitRow}>
+            <View style={styles.bullet} />
+            <Text style={[type.body, styles.benefitText]}>{b}</Text>
+          </View>
         ))}
       </View>
 
@@ -111,58 +113,53 @@ export default function PaywallScreen({ navigation, route }: ScreenProps<'Paywal
       ) : plans.length === 0 ? (
         <Text style={type.caption}>Plans aren’t available right now. Try again later.</Text>
       ) : (
-        plans.map((p) => {
-          const on = p.id === selectedId;
-          return (
-            <Pressable
-              key={p.id}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              onPress={() => setSelectedId(p.id)}
-              style={[styles.plan, on && styles.planOn]}
-            >
-              <View style={styles.flex}>
-                <Text style={type.label}>{p.title}</Text>
-                <Text style={type.caption}>{p.trial ?? 'No trial'}</Text>
-              </View>
-              {p.badge ? <Text style={styles.badge}>{p.badge}</Text> : null}
-              <Text style={type.label}>
-                {p.price}
-                <Text style={type.caption}>/{p.period}</Text>
-              </Text>
-            </Pressable>
-          );
-        })
+        <View style={styles.plans}>
+          {plans.map((p) => {
+            const on = p.id === selectedId;
+            return (
+              <Pressable
+                key={p.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on }}
+                onPress={() => setSelectedId(p.id)}
+                style={[styles.plan, on && styles.planOn]}
+              >
+                <View style={styles.planText}>
+                  <Text style={type.label}>{p.title}</Text>
+                  <Text style={type.caption}>{p.trial ?? 'No trial'}</Text>
+                </View>
+                {p.badge ? <StatusPill label={p.badge} tone="active" /> : null}
+                <Text style={type.label}>
+                  {p.price}
+                  <Text style={type.caption}>/{p.period}</Text>
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   center: { textAlign: 'center' },
-  eyebrow: { ...type.caption, color: colors.accent, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  benefits: { gap: 6 },
+  benefits: { gap: space.sm },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  bullet: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
+  benefitText: { flex: 1 },
+  plans: { gap: space.sm },
   plan: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: space.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.line,
-    padding: 16,
+    padding: space.lg,
   },
   planOn: { borderColor: colors.primary },
-  badge: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.primary,
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-  },
+  planText: { flex: 1, gap: 2 },
   links: { flexDirection: 'row', justifyContent: 'space-between' },
 });

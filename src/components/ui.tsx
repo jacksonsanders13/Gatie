@@ -13,27 +13,35 @@ import {
 } from 'react-native';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radius, type } from '../theme';
+import { colors, radius, space, type } from '../theme';
 
 type ScreenProps = {
   children: ReactNode;
   footer?: ReactNode;
   edges?: Edge[];
+  scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 };
 
-/** Scrollable page with an optional footer pinned above the keyboard. */
-export function Screen({ children, footer, edges = ['bottom'], contentStyle }: ScreenProps) {
+/** Page shell: scrolling body with an optional footer that stays above the keyboard. */
+export function Screen({ children, footer, edges = ['bottom'], scroll = true, contentStyle }: ScreenProps) {
+  const body = scroll ? (
+    <ScrollView
+      style={styles.flex}
+      contentContainerStyle={[styles.content, contentStyle]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.flex, styles.content, contentStyle]}>{children}</View>
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={[styles.content, contentStyle]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
+        {body}
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -60,22 +68,17 @@ export function Button({ label, onPress, variant = 'primary', disabled, loading,
       style={({ pressed }) => [
         styles.button,
         variant === 'primary' && styles.primary,
-        variant === 'primary' && inactive && styles.primaryDisabled,
         variant === 'secondary' && styles.secondary,
-        pressed && styles.pressed,
+        variant === 'ghost' && styles.ghost,
+        inactive && (variant === 'primary' ? styles.primaryDisabled : styles.disabledFaded),
+        pressed && !inactive && styles.pressed,
         style,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? colors.onPrimary : colors.primary} />
       ) : (
-        <Text
-          style={[
-            styles.buttonLabel,
-            variant === 'primary' ? styles.primaryLabel : styles.secondaryLabel,
-            variant !== 'primary' && inactive && styles.mutedLabel,
-          ]}
-        >
+        <Text style={[styles.buttonLabel, variant === 'primary' ? styles.primaryLabel : styles.quietLabel]}>
           {label}
         </Text>
       )}
@@ -87,14 +90,40 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
+/** Small uppercase heading with a hairline rule, used to break the page into sections. */
+export function SectionHeader({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={type.overline}>{children}</Text>
+      <View style={styles.rule} />
+    </View>
+  );
 }
 
 export function Notice({ children }: { children: ReactNode }) {
   return (
     <View style={styles.notice}>
-      <Text style={type.caption}>{children}</Text>
+      <View style={styles.noticeBar} />
+      <Text style={[type.caption, styles.noticeText]}>{children}</Text>
+    </View>
+  );
+}
+
+/** Neutral stand-in for an app icon: the first letter in a quiet square. */
+export function Monogram({ label, tone = 'default' }: { label: string; tone?: 'default' | 'onPrimary' }) {
+  return (
+    <View style={[styles.monogram, tone === 'onPrimary' && styles.monogramOnPrimary]}>
+      <Text style={[styles.monogramText, tone === 'onPrimary' && styles.monogramTextOnPrimary]}>
+        {label.trim().charAt(0).toUpperCase() || '·'}
+      </Text>
+    </View>
+  );
+}
+
+export function StatusPill({ label, tone = 'quiet' }: { label: string; tone?: 'quiet' | 'active' }) {
+  return (
+    <View style={[styles.pill, tone === 'active' && styles.pillActive]}>
+      <Text style={[styles.pillText, tone === 'active' && styles.pillTextActive]}>{label}</Text>
     </View>
   );
 }
@@ -102,49 +131,63 @@ export function Notice({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, gap: 16 },
+  content: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xxl, gap: space.lg },
   footer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-    gap: 8,
+    paddingHorizontal: space.xl,
+    paddingTop: space.md,
+    paddingBottom: space.sm,
+    gap: space.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
     backgroundColor: colors.bg,
   },
   button: {
-    minHeight: 52,
+    minHeight: 50,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
+    paddingHorizontal: space.lg,
   },
   primary: { backgroundColor: colors.primary },
   primaryDisabled: { backgroundColor: colors.disabled },
-  secondary: { backgroundColor: colors.primarySoft },
-  pressed: { opacity: 0.8 },
-  buttonLabel: { fontSize: 17, fontWeight: '600' },
+  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.lineStrong },
+  ghost: { minHeight: 44 },
+  disabledFaded: { opacity: 0.45 },
+  pressed: { opacity: 0.85 },
+  buttonLabel: { fontSize: 16, fontWeight: '600', letterSpacing: -0.1 },
   primaryLabel: { color: colors.onPrimary },
-  secondaryLabel: { color: colors.primary },
-  mutedLabel: { color: colors.disabled },
+  quietLabel: { color: colors.primary },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: 18,
-    gap: 8,
+    borderRadius: radius.md,
+    padding: space.lg,
+    gap: space.sm,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
   },
-  sectionTitle: {
-    ...type.caption,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: 8,
-  },
-  notice: {
-    backgroundColor: colors.accentSoft,
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.sm },
+  rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
+  notice: { flexDirection: 'row', gap: space.md, backgroundColor: colors.surfaceAlt, borderRadius: radius.sm, padding: space.md },
+  noticeBar: { width: 2, borderRadius: 1, backgroundColor: colors.lineStrong },
+  noticeText: { flex: 1 },
+  monogram: {
+    width: 36,
+    height: 36,
     borderRadius: radius.sm,
-    padding: 12,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  monogramOnPrimary: { backgroundColor: 'rgba(255,255,255,0.14)' },
+  monogramText: { fontSize: 15, fontWeight: '600', color: colors.inkSoft },
+  monogramTextOnPrimary: { color: colors.onPrimary },
+  pill: {
+    paddingHorizontal: space.md,
+    paddingVertical: 4,
+    borderRadius: radius.xs,
+    backgroundColor: colors.surfaceAlt,
+  },
+  pillActive: { backgroundColor: colors.accentSoft },
+  pillText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.2, color: colors.muted },
+  pillTextActive: { color: colors.accent },
 });

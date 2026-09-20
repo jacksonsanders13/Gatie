@@ -1,15 +1,19 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Monogram } from '../../components/ui';
 import type { BlockableApp } from '../../services/blocking';
-import { colors, radius, type } from '../../theme';
+import { colors, radius, space, type } from '../../theme';
 
 export function LockedHeader({ app, subtitle }: { app: BlockableApp; subtitle: string }) {
   return (
     <View style={styles.header}>
-      <Text style={styles.glyph}>{app.glyph}</Text>
-      <Text style={type.display}>{app.name} is locked.</Text>
-      <Text style={[type.body, styles.muted]}>{subtitle}</Text>
+      <View style={styles.badgeRow}>
+        <Monogram label={app.name} />
+        <Text style={type.overline}>Locked</Text>
+      </View>
+      <Text style={type.display}>{app.name}</Text>
+      <Text style={type.body}>{subtitle}</Text>
     </View>
   );
 }
@@ -17,10 +21,10 @@ export function LockedHeader({ app, subtitle }: { app: BlockableApp; subtitle: s
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <View style={styles.field}>
-      <Text style={type.label}>
-        {label}
-        {hint ? <Text style={type.caption}>  {hint}</Text> : null}
-      </Text>
+      <View style={styles.labelRow}>
+        <Text style={type.label}>{label}</Text>
+        {hint ? <Text style={type.caption}>{hint}</Text> : null}
+      </View>
       {children}
     </View>
   );
@@ -29,20 +33,21 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 export const inputStyles = StyleSheet.create({
   input: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.lineStrong,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
     fontSize: 16,
+    lineHeight: 22,
     color: colors.ink,
   },
-  multiline: { minHeight: 64, textAlignVertical: 'top' },
+  multiline: { minHeight: 68, textAlignVertical: 'top' },
 });
 
 const styles = StyleSheet.create({
-  header: { gap: 8, marginBottom: 4 },
-  glyph: { fontSize: 40 },
-  muted: { color: colors.muted },
-  field: { gap: 8 },
+  header: { gap: space.sm, marginBottom: space.xs },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  field: { gap: space.sm },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
 });

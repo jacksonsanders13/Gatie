@@ -1,9 +1,9 @@
 import { StyleSheet, Text } from 'react-native';
 
-import { Button, Card, Screen } from '../../components/ui';
+import { Button, Card, Monogram, Screen } from '../../components/ui';
 import { findApp } from '../../services/blocking';
 import type { ReflectionEntry } from '../../state/types';
-import { colors, type } from '../../theme';
+import { space, type } from '../../theme';
 
 type Props = {
   entry: ReflectionEntry;
@@ -23,24 +23,23 @@ export default function CheckInStep({ entry, onAnswer }: Props) {
         </>
       }
     >
-      <Text style={styles.glyph}>{app.glyph}</Text>
-      <Text style={type.display}>Quick check-in</Text>
-      <Text style={[type.body, styles.muted]}>
+      <Monogram label={app.name} />
+      <Text style={type.overline}>Check-in</Text>
+      <Text style={type.display}>Did you end up buying anything?</Text>
+      <Text style={type.body}>
         Last time you opened {app.name}, you said you were {what}.
       </Text>
       {entry.item ? (
-        <Card>
+        <Card style={styles.quote}>
           <Text style={type.caption}>You were looking for</Text>
           <Text style={type.body}>{entry.item}</Text>
         </Card>
       ) : null}
-      <Text style={type.title}>Did you end up buying anything?</Text>
       <Text style={type.caption}>Be honest. Nobody sees this but you, and it keeps quick unlocks working.</Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  glyph: { fontSize: 40 },
-  muted: { color: colors.muted },
+  quote: { gap: space.xs },
 });

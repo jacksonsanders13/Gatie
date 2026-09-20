@@ -1,27 +1,39 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { DeviceActivitySelectionView } from 'react-native-device-activity';
+import { DeviceActivitySelectionSheetView } from 'react-native-device-activity';
 
-import { Button, Notice, Screen } from '../components/ui';
+import { Button, Card, Monogram, Notice, Screen, StatusPill } from '../components/ui';
 import type { ScreenProps } from '../navigation/types';
 import { blocking, MOCK_SHOPPING_APPS } from '../services/blocking';
 import { completeOnboarding, FREE_APP_LIMIT, setBlockedApps, setSelection } from '../state/actions';
 import { useStore } from '../state/store';
 import type { AppState, SelectionSnapshot } from '../state/types';
-import { colors, radius, type } from '../theme';
+import { colors, space, type } from '../theme';
 
 export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppPicker'>) {
   const { state, update } = useStore();
   const fromOnboarding = route.params?.fromOnboarding ?? false;
   const native = blocking.isNative;
 
-  // Apple's picker returns one opaque selection; the mock picker returns app ids.
+  // Apple's picker returns one opaque selection; the preview picker returns app ids.
   const [picked, setPicked] = useState<SelectionSnapshot | null>(state.selection);
   const [selected, setSelected] = useState<string[]>(state.blockedAppIds);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const count = native ? (picked ? picked.appCount + picked.categoryCount + picked.webCount : 0) : selected.length;
   const overFreeLimit = !state.isPro && count > FREE_APP_LIMIT;
+
+  const openPicker = async () => {
+    if (!(await ensureAuthorized())) return;
+    setPickerOpen(true);
+  };
+
+  const ensureAuthorized = async () => {
+    if (await blocking.requestAuthorization()) return true;
+    Alert.alert('Screen Time access needed', 'Gatie can’t lock anything without it. You can grant it in Settings → Screen Time.');
+    return false;
+  };
 
   const toggle = (id: string) => {
     if (selected.includes(id)) setSelected(selected.filter((x) => x !== id));
@@ -36,13 +48,7 @@ export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppP
     }
     setSaving(true);
     try {
-      if (!(await blocking.requestAuthorization())) {
-        Alert.alert(
-          'Screen Time access needed',
-          'Gatie can’t lock anything without it. You can grant it in Settings → Screen Time.',
-        );
-        return;
-      }
+      if (!(await ensureAuthorized())) return;
       if (native) await blocking.applyShields(picked);
       update((s: AppState) => {
         const next = native ? setSelection(s, picked) : setBlockedApps(s, selected);
@@ -59,36 +65,52 @@ export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppP
     <Screen
       footer={
         <Button
-          label={count ? `Block ${count} app${count > 1 ? 's' : ''}` : 'Pick at least one app'}
+          label={count ? `Lock ${count} selection${count > 1 ? 's' : ''}` : 'Choose something to lock'}
           onPress={save}
           disabled={!count}
           loading={saving}
         />
       }
     >
-      <Text style={type.body}>Which apps get you? Gatie will lock them until you’ve written down why you’re going in.</Text>
+      <Text style={type.display}>What gets you?</Text>
+      <Text style={type.body}>
+        Gatie keeps these shut until you’ve written down why you’re going in.
+      </Text>
 
       {native ? (
-        <DeviceActivitySelectionView
-          style={styles.picker}
-          familyActivitySelection={picked?.token ?? null}
-          onSelectionChange={({ nativeEvent }) =>
-            setPicked(
-              nativeEvent.familyActivitySelection
-                ? {
-                    token: nativeEvent.familyActivitySelection,
-                    appCount: nativeEvent.applicationCount,
-                    categoryCount: nativeEvent.categoryCount,
-                    webCount: nativeEvent.webDomainCount,
-                  }
-                : null,
-            )
-          }
-        />
+        <>
+          <Card style={styles.summary}>
+            <View style={styles.summaryText}>
+              <Text style={type.label}>{picked ? summarize(picked) : 'Nothing chosen yet'}</Text>
+              <Text style={type.caption}>Search by name, or open a category to pick single apps.</Text>
+            </View>
+            <Button label={picked ? 'Change' : 'Choose'} variant="secondary" onPress={openPicker} style={styles.chooseButton} />
+          </Card>
+
+          {pickerOpen && (
+            <DeviceActivitySelectionSheetView
+              style={styles.anchor}
+              familyActivitySelection={picked?.token ?? null}
+              onDismissRequest={() => setPickerOpen(false)}
+              onSelectionChange={({ nativeEvent }) =>
+                setPicked(
+                  nativeEvent.familyActivitySelection
+                    ? {
+                        token: nativeEvent.familyActivitySelection,
+                        appCount: nativeEvent.applicationCount,
+                        categoryCount: nativeEvent.categoryCount,
+                        webCount: nativeEvent.webDomainCount,
+                      }
+                    : null,
+                )
+              }
+            />
+          )}
+        </>
       ) : (
         <>
-          <Notice>Preview list. On your phone this is Apple’s own picker, so you can choose any app.</Notice>
-          <View style={styles.grid}>
+          <Notice>Preview list. On your phone this is Apple’s own picker, so you can choose any app or website.</Notice>
+          <View style={styles.list}>
             {MOCK_SHOPPING_APPS.map((app) => {
               const on = selected.includes(app.id);
               return (
@@ -97,11 +119,12 @@ export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppP
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: on }}
                   onPress={() => toggle(app.id)}
-                  style={[styles.tile, on && styles.tileOn]}
                 >
-                  <Text style={styles.glyph}>{app.glyph}</Text>
-                  <Text style={[type.label, on && styles.labelOn]}>{app.name}</Text>
-                  <Text style={[type.caption, on && styles.labelOn]}>{on ? 'Blocked' : 'Tap to block'}</Text>
+                  <Card style={[styles.row, on && styles.rowOn]}>
+                    <Monogram label={app.name} />
+                    <Text style={[type.label, styles.rowName]}>{app.name}</Text>
+                    <StatusPill label={on ? 'Locked' : 'Off'} tone={on ? 'active' : 'quiet'} />
+                  </Card>
                 </Pressable>
               );
             })}
@@ -110,28 +133,28 @@ export default function AppPickerScreen({ navigation, route }: ScreenProps<'AppP
       )}
 
       {!state.isPro && (
-        <Text style={type.caption}>
-          Free plan blocks {FREE_APP_LIMIT} app. Gatie Pro blocks as many as you need.
-        </Text>
+        <Text style={type.caption}>Free covers {FREE_APP_LIMIT} app. Gatie Pro covers as many as you need.</Text>
       )}
     </Screen>
   );
 }
 
+function summarize({ appCount, categoryCount, webCount }: SelectionSnapshot): string {
+  const parts = [
+    appCount ? `${appCount} app${appCount > 1 ? 's' : ''}` : null,
+    categoryCount ? `${categoryCount} categor${categoryCount > 1 ? 'ies' : 'y'}` : null,
+    webCount ? `${webCount} website${webCount > 1 ? 's' : ''}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'Nothing chosen yet';
+}
+
 const styles = StyleSheet.create({
-  picker: { height: 440, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  tile: {
-    width: '47%',
-    flexGrow: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.line,
-    padding: 14,
-    gap: 4,
-  },
-  tileOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  glyph: { fontSize: 26 },
-  labelOn: { color: colors.onPrimary },
+  summary: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  summaryText: { flex: 1, gap: 2 },
+  chooseButton: { paddingHorizontal: space.lg, minHeight: 40 },
+  anchor: { width: 1, height: 1, position: 'absolute' },
+  list: { gap: space.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
+  rowOn: { borderColor: colors.primary },
+  rowName: { flex: 1 },
 });

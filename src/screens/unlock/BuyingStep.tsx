@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button, Card, Screen } from '../../components/ui';
 import { useNow } from '../../hooks/useNow';
@@ -14,7 +14,7 @@ import {
 } from '../../state/selectors';
 import { useStore } from '../../state/store';
 import type { ReflectionDraft } from '../../state/types';
-import { colors, type } from '../../theme';
+import { colors, space, type } from '../../theme';
 import { Field, inputStyles, LockedHeader } from './shared';
 
 type Props = {
@@ -27,7 +27,7 @@ type Props = {
 export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props) {
   const { state, update } = useStore();
 
-  // A wait already in progress for this app survives leaving the screen or closing the app.
+  // A wait already running for this app survives leaving the screen or closing the app.
   const pending = state.pendingUnlock?.appId === app.id ? state.pendingUnlock : null;
 
   const [item, setItem] = useState(pending?.item ?? '');
@@ -55,9 +55,9 @@ export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props)
 
   let primaryLabel: string;
   if (!pending && !complete) primaryLabel = 'Write your reasons to unlock';
-  else if (!pending) primaryLabel = `Unlock (${effectiveWaitMinutes(state)}-min wait)`;
+  else if (!pending) primaryLabel = `Unlock · ${effectiveWaitMinutes(state)} min wait`;
   else if (remaining! > 0) primaryLabel = `Unlock in ${formatCountdown(remaining!)}`;
-  else primaryLabel = `Open ${app.name} for ${UNLOCK_WINDOWS.buying} min`;
+  else primaryLabel = `Open for ${UNLOCK_WINDOWS.buying} min`;
 
   return (
     <Screen
@@ -82,18 +82,20 @@ export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props)
       </Field>
 
       <Field label="Two reasons you want it">
-        {([0, 1] as const).map((i) => (
-          <TextInput
-            key={i}
-            style={[inputStyles.input, inputStyles.multiline]}
-            value={reasonsFor[i]}
-            onChangeText={(t) => setReasonFor(i, t)}
-            editable={!locked}
-            multiline
-            placeholder={i === 0 ? 'First reason' : 'Second reason'}
-            placeholderTextColor={colors.disabled}
-          />
-        ))}
+        <View style={styles.stack}>
+          {([0, 1] as const).map((i) => (
+            <TextInput
+              key={i}
+              style={[inputStyles.input, inputStyles.multiline]}
+              value={reasonsFor[i]}
+              onChangeText={(t) => setReasonFor(i, t)}
+              editable={!locked}
+              multiline
+              placeholder={i === 0 ? 'First reason' : 'Second reason'}
+              placeholderTextColor={colors.disabled}
+            />
+          ))}
+        </View>
       </Field>
 
       <Field label="One reason you don’t need it">
@@ -122,7 +124,7 @@ export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props)
           (hours != null ? (
             <Card style={styles.reframe}>
               <Text style={type.label}>
-                That’s about {hours < 1 ? `${Math.round(hours * 60)} minutes` : `${hours.toFixed(1)} hours`} of work.
+                About {hours < 1 ? `${Math.round(hours * 60)} minutes` : `${hours.toFixed(1)} hours`} of work.
               </Text>
             </Card>
           ) : (
@@ -132,7 +134,7 @@ export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props)
 
       {locked ? (
         <Text style={type.caption}>
-          Your answers are locked in. Sit with them while the timer runs. You can still walk away.
+          Your answers are locked in. Sit with them while the timer runs — you can still walk away.
         </Text>
       ) : (
         <>
@@ -145,5 +147,6 @@ export default function BuyingStep({ app, onUnlock, onWalkAway, onBack }: Props)
 }
 
 const styles = StyleSheet.create({
+  stack: { gap: space.sm },
   reframe: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
 });

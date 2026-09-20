@@ -4,7 +4,7 @@ import { Button, Screen } from '../../components/ui';
 import type { BlockableApp } from '../../services/blocking';
 import { UNLOCK_WINDOWS } from '../../state/actions';
 import type { UnlockIntent } from '../../state/types';
-import { colors, radius, type } from '../../theme';
+import { colors, radius, space, type } from '../../theme';
 import { LockedHeader } from './shared';
 
 type Props = {
@@ -24,25 +24,27 @@ export default function IntentStep(props: Props) {
     <Screen footer={<Button label="Never mind, I’ll skip it" variant="ghost" onPress={onWalkAway} />}>
       <LockedHeader app={app} subtitle="What are you here for?" />
 
-      <Option
-        title="Buying something"
-        detail={`Write down why, then a ${waitMinutes}-min wait. Open for ${UNLOCK_WINDOWS.buying} min.`}
-        onPress={() => onPick('buying')}
-      />
-      <Option
-        title="Just browsing"
-        detail={`One line, no wait. Open for ${UNLOCK_WINDOWS.browsing} min. ${browsesLeft} left today.`}
-        blockedReason={browseBlockedReason}
-        onPress={() => onPick('browsing')}
-      />
-      <Option
-        title="Checking an order"
-        detail={`No questions. Open for ${UNLOCK_WINDOWS.checking} min.`}
-        blockedReason={checkBlockedReason}
-        onPress={() => onPick('checking')}
-      />
+      <View style={styles.options}>
+        <Option
+          title="Buying something"
+          detail={`Write it down, wait ${waitMinutes} min, then ${UNLOCK_WINDOWS.buying} min inside.`}
+          onPress={() => onPick('buying')}
+        />
+        <Option
+          title="Just browsing"
+          detail={`One line, no wait. ${UNLOCK_WINDOWS.browsing} min inside · ${browsesLeft} left today.`}
+          blockedReason={browseBlockedReason}
+          onPress={() => onPick('browsing')}
+        />
+        <Option
+          title="Checking an order"
+          detail={`No questions. ${UNLOCK_WINDOWS.checking} min inside.`}
+          blockedReason={checkBlockedReason}
+          onPress={() => onPick('checking')}
+        />
+      </View>
 
-      <Text style={type.caption}>Browsing and order checks get a quick check-in next time you’re back.</Text>
+      <Text style={type.caption}>Browsing and order checks get a short check-in next time you’re back.</Text>
     </Screen>
   );
 }
@@ -64,8 +66,8 @@ function Option({ title, detail, blockedReason, onPress }: OptionProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.option, blocked && styles.optionBlocked, pressed && styles.pressed]}
     >
-      <View style={styles.flex}>
-        <Text style={[type.label, blocked && styles.blockedText]}>{title}</Text>
+      <View style={styles.optionText}>
+        <Text style={[type.label, blocked && styles.mutedText]}>{title}</Text>
         <Text style={[type.caption, blocked && styles.blockedReason]}>{blockedReason ?? detail}</Text>
       </View>
       {!blocked && <Text style={styles.chevron}>›</Text>}
@@ -74,20 +76,22 @@ function Option({ title, detail, blockedReason, onPress }: OptionProps) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, gap: 2 },
+  options: { gap: space.sm },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.line,
-    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.lineStrong,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.lg,
   },
-  optionBlocked: { backgroundColor: colors.bg },
-  pressed: { opacity: 0.8 },
-  blockedText: { color: colors.muted },
+  optionBlocked: { backgroundColor: colors.surfaceAlt, borderColor: colors.line },
+  optionText: { flex: 1, gap: 2 },
+  pressed: { opacity: 0.85 },
+  mutedText: { color: colors.muted },
   blockedReason: { color: colors.danger },
-  chevron: { fontSize: 28, color: colors.primary },
+  chevron: { fontSize: 24, lineHeight: 26, color: colors.lineStrong },
 });

@@ -22,7 +22,7 @@ export default function BrowseStep({ app, onUnlock, onBack }: Props) {
       footer={
         <>
           <Button
-            label={`Open ${app.name} for ${UNLOCK_WINDOWS.browsing} min`}
+            label={`Open for ${UNLOCK_WINDOWS.browsing} min`}
             onPress={() => onUnlock(note)}
             disabled={!isFilled(note)}
           />
@@ -30,7 +30,7 @@ export default function BrowseStep({ app, onUnlock, onBack }: Props) {
         </>
       }
     >
-      <LockedHeader app={app} subtitle="Just browsing is fine. Say what for, so future you can check." />
+      <LockedHeader app={app} subtitle="Browsing is fine. Say what for, so future you can check." />
       <Field label="What are you looking for?">
         <TextInput
           style={inputStyles.input}
@@ -42,8 +42,8 @@ export default function BrowseStep({ app, onUnlock, onBack }: Props) {
         />
       </Field>
       <Text style={type.caption}>
-        {app.name} locks again after {UNLOCK_WINDOWS.browsing} minutes, even mid-scroll. Next time, Gatie will ask
-        whether you bought anything.
+        It locks again after {UNLOCK_WINDOWS.browsing} minutes, even mid-scroll. Next time, Gatie asks whether you
+        bought anything.
       </Text>
     </Screen>
   );
