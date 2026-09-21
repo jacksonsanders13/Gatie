@@ -126,6 +126,7 @@ export const blocking = {
                   title: 'Gatie',
                   body: 'Write your reason to unlock.',
                   sound: 'default',
+                  identifier: UNLOCK_NOTIFICATION_TAG,
                   userInfo: { tag: UNLOCK_NOTIFICATION_TAG },
                 },
               },

@@ -9,6 +9,7 @@ import Foundation
 import ManagedSettings
 import ManagedSettingsUI
 import UIKit
+import UserNotifications
 import os
 
 func convertBase64StringToImage(imageBase64String: String?) -> UIImage? {
@@ -119,12 +120,42 @@ func buildShield(placeholders: [String: String?], config: [String: Any]?)
   return ShieldConfiguration()
 }
 
+// GATIE: Apple won't let an extension launch an app, so the shield announces itself the moment it
+// appears. Tapping the notification is what carries the user into the reflection screen.
+private let gateNotificationIdentifier = "gatie-unlock"
+private let gateNotificationLastSentKey = "gatieGateNotificationLastSentAt"
+private let gateNotificationMinimumInterval: TimeInterval = 8
+
+func postGateNotification() {
+  let now = Date().timeIntervalSince1970
+  let lastSent = userDefaults?.double(forKey: gateNotificationLastSentKey) ?? 0
+  // iOS can rebuild a shield several times in a row; one notification per visit is plenty.
+  if now - lastSent < gateNotificationMinimumInterval {
+    return
+  }
+  userDefaults?.set(now, forKey: gateNotificationLastSentKey)
+
+  let content = UNMutableNotificationContent()
+  content.title = "Gatie"
+  content.body = "Write your reason to unlock."
+  content.sound = .default
+  content.userInfo = ["tag": gateNotificationIdentifier]
+
+  let request = UNNotificationRequest(
+    identifier: gateNotificationIdentifier,
+    content: content,
+    trigger: nil
+  )
+  UNUserNotificationCenter.current().add(request)
+}
+
 // Override the functions below to customize the shields used in various situations.
 // The system provides a default appearance for any methods that your subclass doesn't override.
 // Make sure that your class name matches the NSExtensionPrincipalClass in your Info.plist.
 class ShieldConfigurationExtension: ShieldConfigurationDataSource {
   override func configuration(shielding application: Application) -> ShieldConfiguration {
     // Customize the shield as needed for applications.
+    postGateNotification()
 
     let config = getActivitySelectionPrefixedConfigFromUserDefaults(
       keyPrefix: SHIELD_CONFIGURATION_FOR_SELECTION_PREFIX,
@@ -151,6 +182,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     -> ShieldConfiguration {
 
     logger.log("shielding application category")
+    postGateNotification()
 
     let config = getActivitySelectionPrefixedConfigFromUserDefaults(
       keyPrefix: SHIELD_CONFIGURATION_FOR_SELECTION_PREFIX,
@@ -177,6 +209,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
   override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration {
     logger.log("shielding web domain")
+    postGateNotification()
 
     let config = getActivitySelectionPrefixedConfigFromUserDefaults(
       keyPrefix: SHIELD_CONFIGURATION_FOR_SELECTION_PREFIX,
@@ -203,6 +236,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     -> ShieldConfiguration {
 
     logger.log("shielding web domain category")
+    postGateNotification()
 
     let config = getActivitySelectionPrefixedConfigFromUserDefaults(
       keyPrefix: SHIELD_CONFIGURATION_FOR_SELECTION_PREFIX,

@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { Button, Card, Screen, SectionHeader } from '../components/ui';
 import type { ScreenProps } from '../navigation/types';
 import { blocking } from '../services/blocking';
+import {
+  ensureNotificationPermission,
+  getNotificationPermission,
+  sendTestUnlockNotification,
+} from '../services/notifications';
 import { isMockPurchases } from '../services/purchases';
 import { DEFAULT_WAIT_MINUTES, setPro, updateSettings, WAIT_OPTIONS } from '../state/actions';
 import { parseMoney } from '../state/selectors';
@@ -14,6 +19,11 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
   const { state, update, reset } = useStore();
   const { settings, isPro } = state;
   const [wageText, setWageText] = useState(settings.hourlyWage != null ? String(settings.hourlyWage) : '');
+  const [permission, setPermission] = useState('checking');
+
+  useEffect(() => {
+    getNotificationPermission().then(setPermission).catch(() => setPermission('unknown'));
+  }, []);
 
   const pickWait = (minutes: number) => {
     if (!isPro) {
@@ -112,8 +122,28 @@ export default function SettingsScreen({ navigation }: ScreenProps<'Settings'>) 
             />
           )}
           <Text style={type.caption}>
-            Screen Time active: {String(blocking.isNative)} · shield up: {String(blocking.isShieldUp())}
+            Screen Time: {String(blocking.isNative)} · shield up: {String(blocking.isShieldUp())} · notifications:{' '}
+            {permission}
           </Text>
+          <Button
+            label="Re-apply blocks and shield"
+            variant="secondary"
+            onPress={async () => {
+              await ensureNotificationPermission();
+              setPermission(await getNotificationPermission());
+              await blocking.applyShields(state.selection);
+              Alert.alert('Re-applied', 'The shield now carries the current button setup.');
+            }}
+          />
+          <Button
+            label="Send test notification"
+            variant="secondary"
+            onPress={async () => {
+              await ensureNotificationPermission();
+              await sendTestUnlockNotification();
+              Alert.alert('Sent', 'Leave Gatie to see it. Tapping it should open the reflection screen.');
+            }}
+          />
           <Button
             label="Clear all blocks"
             variant="secondary"

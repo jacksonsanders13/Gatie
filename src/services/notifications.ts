@@ -41,3 +41,20 @@ export function onUnlockNotificationTap(handler: () => void): () => void {
 
   return () => subscription.remove();
 }
+
+export async function getNotificationPermission(): Promise<string> {
+  const { status, granted } = await Notifications.getPermissionsAsync();
+  return granted ? 'granted' : status;
+}
+
+/** Proves the notification path end to end: it should behave exactly like the shield's. */
+export async function sendTestUnlockNotification(): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Gatie',
+      body: 'Write your reason to unlock.',
+      data: { tag: UNLOCK_NOTIFICATION_TAG },
+    },
+    trigger: null,
+  });
+}

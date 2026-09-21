@@ -38,7 +38,8 @@
         "react-native-device-activity",
         {
           "appleTeamId": "MQ23RQRGS5",
-          "appGroup": "group.com.jacksonsanders.gatie"
+          "appGroup": "group.com.jacksonsanders.gatie",
+          "copyToTargetFolder": false
         }
       ]
     ],
